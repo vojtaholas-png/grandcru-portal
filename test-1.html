@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/><title>Test</title></head>
+<body>
+<div id="status">Načítám Firebase...</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDRUAXfrrc7iR8SF3qesLnm08UhJjcdFn8",
+  authDomain: "crand-cru.firebaseapp.com",
+  projectId: "crand-cru",
+  storageBucket: "crand-cru.firebasestorage.app",
+  messagingSenderId: "190208792561",
+  appId: "1:190208792561:web:063313b60c4642a8f55650"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+document.getElementById("status").textContent = "Firebase OK, načítám data...";
+
+db.collection("grandcru").doc("data").get()
+  .then(function(snap){
+    if(snap.exists){
+      const data = snap.data();
+      document.getElementById("status").textContent = 
+        "✅ Firestore OK! Zaměstnanců: " + (data.employees||[]).length;
+    } else {
+      document.getElementById("status").textContent = "⚠️ Dokument neexistuje";
+    }
+  })
+  .catch(function(e){
+    document.getElementById("status").textContent = "❌ Chyba: " + e.message;
+  });
+</script>
+</body>
+</html>
