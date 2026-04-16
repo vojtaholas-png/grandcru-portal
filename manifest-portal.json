@@ -1,0 +1,22 @@
+{
+  "name": "Grand Cru Portál",
+  "short_name": "Grand Cru",
+  "description": "Grand Cru Restaurant - Portál zaměstnanců",
+  "start_url": "./grandcru-portal.html",
+  "display": "standalone",
+  "background_color": "#6B1A2A",
+  "theme_color": "#6B1A2A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-portal.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-portal.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

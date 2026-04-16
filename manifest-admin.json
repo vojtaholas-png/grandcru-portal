@@ -1,0 +1,22 @@
+{
+  "name": "Grand Cru Administrace",
+  "short_name": "GC Admin",
+  "description": "Grand Cru Restaurant - Admin Panel",
+  "start_url": "./grandcru-admin.html",
+  "display": "standalone",
+  "background_color": "#6B1A2A",
+  "theme_color": "#6B1A2A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-admin.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-admin.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
