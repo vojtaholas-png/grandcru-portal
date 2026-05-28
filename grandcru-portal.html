@@ -985,23 +985,111 @@ async function removePhoto(){
 }
 
 function openTrainingDetail(id){
-  const t=(appData.trainings||[]).find(function(x){ return x.id===id; });
+  var t=(appData.trainings||[]).find(function(x){ return x.id===id; });
   if(!t) return;
-  const attended=(t.attended||[]).includes(currentEmp.id);
-  const overlay=document.createElement("div");
+  var attended=(t.attended||[]).includes(currentEmp.id);
+  var reviews=t.reviews||[];
+  var myReview=reviews.find(function(r){ return r.empId===currentEmp.id; });
+  var overlay=document.createElement("div");
+  overlay.id="training-overlay";
   overlay.style.cssText="position:fixed;inset:0;background:var(--warm);z-index:400;overflow-y:auto;padding:24px 20px 100px;";
-  overlay.innerHTML=
-    '<button onclick="this.parentNode.remove()" style="background:none;border:1px solid var(--creamD);border-radius:4px;padding:7px 16px;cursor:pointer;color:var(--wine);font-size:13px;letter-spacing:2px;margin-bottom:20px;font-family:\'Cormorant Garamond\',serif;">‹ ZPĚT</button>'+
-    '<div style="background:'+(attended?"rgba(201,168,76,0.15)":"rgba(107,26,42,0.08)")+';color:'+(attended?"var(--gold)":"var(--muted)")+';border-radius:3px;padding:3px 12px;font-size:10px;letter-spacing:3px;display:inline-block;margin-bottom:14px;">'+(attended?"✦ BYL/A PŘÍTOMEN/NA":"NAPLÁNOVÁNO")+'</div>'+
-    '<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:var(--charcoal);margin-bottom:8px;">'+t.title+'</div>'+
-    '<div style="font-size:13px;color:var(--muted);margin-bottom:'+(attended?"4px":"20px")+'">📅 '+t.date+'</div>'+
-    (attended?'<div style="font-size:13px;color:var(--gold);margin-bottom:20px;">✦ +20 bodů za docházku</div>':'')+
-    (t.article?
-      '<div style="background:#fff;border-radius:6px;padding:20px;border:1px solid var(--creamD);margin-bottom:16px;"><div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;">OBSAH ŠKOLENÍ</div><div style="font-size:15px;line-height:1.8;color:var(--charcoal);white-space:pre-wrap;">'+t.article+'</div></div>':
-      '<div style="color:var(--muted);font-style:italic;margin-bottom:16px;">Žádný popis</div>')+
-    (t.fileUrl?
-      '<a href="'+t.fileUrl+'" target="_blank" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--creamD);border-radius:6px;padding:14px 18px;color:var(--wine);text-decoration:none;margin-bottom:16px;"><span style="font-size:22px;">📎</span><div><div style="font-weight:700;font-size:15px;">Otevřít přílohu</div></div></a>':
-      '');
+
+  function buildStars(selected, interactive, tid){
+    var html="";
+    for(var i=1;i<=5;i++){
+      html+='<span onclick="'+(interactive?'rateTraining('+tid+','+i+')':'')+'" style="font-size:28px;cursor:'+(interactive?'pointer':'default')+';color:'+(i<=selected?'#FFB300':'var(--creamD)')+';">★</span>';
+    }
+    return html;
+  }
+
+  function buildReviews(){
+    var html="";
+    if(reviews.length===0){
+      html='<div style="color:var(--muted);font-style:italic;font-size:13px;">Zatím žádná hodnocení</div>';
+    } else {
+      reviews.forEach(function(r){
+        var emp=(appData.employees||[]).find(function(e){ return e.id===r.empId; });
+        var name=emp?emp.name.split(" ").slice(-1)[0]:"?";
+        var photo=emp&&emp.photo?'<img src="'+emp.photo+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);"/>':'<div style="width:32px;height:32px;border-radius:50%;background:var(--wine);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--cream);font-weight:700;">'+(emp?emp.initials:"?")+'</div>';
+        html+='<div style="background:#fff;border-radius:6px;padding:12px;margin-bottom:8px;border:1px solid var(--creamD);">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+            +photo
+            +'<div>'
+              +'<div style="font-size:13px;font-weight:700;color:var(--charcoal);">'+name+'</div>'
+              +'<div>'+buildStars(r.stars,false,0)+'</div>'
+            +'</div>'
+          +'</div>'
+          +(r.comment?'<div style="font-size:13px;color:var(--charcoal);font-style:italic;">„'+r.comment+'"</div>':'')
+        +'</div>';
+      });
+    }
+    return html;
+  }
+
+  function renderOverlay(){
+    var myR=(t.reviews||[]).find(function(r){ return r.empId===currentEmp.id; });
+    overlay.innerHTML=
+      '<button onclick="this.parentNode.remove()" style="background:none;border:1px solid var(--creamD);border-radius:4px;padding:7px 16px;cursor:pointer;color:var(--wine);font-size:13px;letter-spacing:2px;margin-bottom:20px;font-family:\'Cormorant Garamond\',serif;">‹ ZPĚT</button>'+
+      '<div style="background:'+(attended?"rgba(201,168,76,0.15)":"rgba(107,26,42,0.08)")+';color:'+(attended?"var(--gold)":"var(--muted)")+';border-radius:3px;padding:3px 12px;font-size:10px;letter-spacing:3px;display:inline-block;margin-bottom:14px;">'+(attended?"✦ BYL/A PŘÍTOMEN/NA":"NAPLÁNOVÁNO")+'</div>'+
+      '<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:var(--charcoal);margin-bottom:8px;">'+t.title+'</div>'+
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:'+(attended?"4px":"20px")+'">📅 '+t.date+'</div>'+
+      (attended?'<div style="font-size:13px;color:var(--gold);margin-bottom:20px;">✦ +20 bodů za docházku</div>':'')+
+      (t.article?'<div style="background:#fff;border-radius:6px;padding:20px;border:1px solid var(--creamD);margin-bottom:16px;"><div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;">OBSAH ŠKOLENÍ</div><div style="font-size:15px;line-height:1.8;color:var(--charcoal);white-space:pre-wrap;">'+t.article+'</div></div>':'<div style="color:var(--muted);font-style:italic;margin-bottom:16px;">Žádný popis</div>')+
+      (t.fileUrl?'<a href="'+t.fileUrl+'" target="_blank" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--creamD);border-radius:6px;padding:14px 18px;color:var(--wine);text-decoration:none;margin-bottom:16px;"><span style="font-size:22px;">📎</span><div><div style="font-weight:700;font-size:15px;">Otevřít přílohu</div></div></a>':'')+
+      // Hodnocení
+      (attended?
+        '<div style="background:#fff;border-radius:6px;padding:16px;border:1px solid var(--creamD);margin-bottom:16px;">'+
+          '<div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">'+(myR?"MOJE HODNOCENÍ":"OHODNOTIT ŠKOLENÍ")+'</div>'+
+          '<div style="margin-bottom:8px;">'+buildStars(myR?myR.stars:0, true, t.id)+'</div>'+
+          '<textarea id="review-comment" placeholder="Komentář (volitelné)..." style="width:100%;background:var(--warm);border:1px solid var(--creamD);border-radius:4px;padding:10px;font-size:14px;font-family:\'Cormorant Garamond\',serif;resize:none;height:70px;box-sizing:border-box;">'+(myR&&myR.comment?myR.comment:'')+'</textarea>'+
+          '<button onclick="submitReview('+t.id+')" style="width:100%;margin-top:8px;background:linear-gradient(135deg,var(--wine),var(--wineD));border:none;border-radius:4px;padding:10px;color:var(--cream);font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;">'+(myR?"UPRAVIT HODNOCENÍ":"ULOŽIT HODNOCENÍ")+'</button>'+
+        '</div>':'')+
+      // Hodnocení ostatních
+      '<div style="background:#fff;border-radius:6px;padding:16px;border:1px solid var(--creamD);">'+
+        '<div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">HODNOCENÍ KOLEGŮ</div>'+
+        buildReviews()+
+      '</div>';
+  }
+
+  window.rateTraining=function(tid, stars){
+    // Ulož hvězdičky okamžitě
+    window._pendingStars=stars;
+    // Obarvi hvězdičky
+    var spans=overlay.querySelectorAll("span[style*='★']");
+    // Refresh overlay s novým výběrem
+    var myR2=(t.reviews||[]).find(function(r){ return r.empId===currentEmp.id; });
+    if(!myR2){ myR2={empId:currentEmp.id,stars:stars,comment:""}; }
+    else { myR2=Object.assign({},myR2,{stars:stars}); }
+    // Přebarvi hvězdičky
+    var starEls=overlay.querySelectorAll(".star-btn");
+    // Jednodušeji — refreshni overlay
+    t=Object.assign({},t,{reviews:(t.reviews||[]).filter(function(r){ return r.empId!==currentEmp.id; }).concat([myR2])});
+    renderOverlay();
+  };
+
+  window.submitReview=async function(tid){
+    var stars=window._pendingStars||0;
+    var myR2=(t.reviews||[]).find(function(r){ return r.empId===currentEmp.id; });
+    if(myR2) stars=myR2.stars;
+    var comment=document.getElementById("review-comment")?document.getElementById("review-comment").value.trim():"";
+    var newReview={empId:currentEmp.id,stars:stars,comment:comment};
+    var trainings=(appData.trainings||[]).map(function(tr){
+      if(tr.id!==tid) return tr;
+      var reviews2=(tr.reviews||[]).filter(function(r){ return r.empId!==currentEmp.id; });
+      reviews2.push(newReview);
+      return Object.assign({},tr,{reviews:reviews2});
+    });
+    var next=Object.assign({},appData,{trainings:trainings});
+    appData=next;
+    await saveToFirestore(next);
+    // Aktualizuj lokální t
+    t=trainings.find(function(tr){ return tr.id===tid; });
+    reviews=t.reviews||[];
+    showToast("Hodnocení uloženo ✦");
+    renderOverlay();
+  };
+
+  renderOverlay();
   document.getElementById("app").appendChild(overlay);
 }
 
@@ -1353,6 +1441,36 @@ function openColleagueDetail(empId){
     html+='<div class="card card-pad" style="margin-bottom:10px;">'
       +'<div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">ABSOLVOVANÁ ŠKOLENÍ</div>'
       +attended.map(function(t){ return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--creamD);"><span style="font-size:14px;color:var(--charcoal);">✦ '+t.title+'</span><span style="font-size:11px;color:var(--gold);">'+t.date+' +20b</span></div>'; }).join("")
+    +'</div>';
+  }
+
+  // Naplánovaná školení
+  if(upcoming.length>0){
+    html+='<div class="card card-pad" style="margin-bottom:10px;">'
+      +'<div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">NAPLÁNOVANÁ ŠKOLENÍ</div>'
+      +upcoming.map(function(t){ return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--creamD);"><span style="font-size:14px;color:var(--charcoal);">◈ '+t.title+'</span><span style="font-size:11px;color:var(--muted);">'+t.date+'</span></div>'; }).join("")
+    +'</div>';
+  }
+
+  // Potvrzené akce
+  var today3 = new Date();
+  var todayStr3 = today3.getFullYear()+'-'+String(today3.getMonth()+1).padStart(2,'0')+'-'+String(today3.getDate()).padStart(2,'0');
+  var confirmedEvs = (appData.events||[]).filter(function(ev){
+    if(!(ev.invited||[]).includes(e.id)) return false;
+    var resp=(ev.responses||[]).find(function(r){ return r.empId===e.id; });
+    return resp&&resp.status==="yes";
+  }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var declinedEvs = (appData.events||[]).filter(function(ev){
+    if(!(ev.invited||[]).includes(e.id)) return false;
+    var resp=(ev.responses||[]).find(function(r){ return r.empId===e.id; });
+    return resp&&resp.status==="no";
+  });
+
+  if(confirmedEvs.length>0||declinedEvs.length>0){
+    html+='<div class="card card-pad" style="margin-bottom:10px;">'
+      +'<div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">AKCE</div>'
+      +confirmedEvs.map(function(ev){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--creamD);"><span style="font-size:14px;color:var(--charcoal);">◆ '+ev.title+'</span><span style="font-size:11px;color:#2e7d32;font-weight:700;">✓ Potvrzeno</span></div>'; }).join("")
+      +declinedEvs.map(function(ev){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--creamD);"><span style="font-size:14px;color:var(--muted);">◆ '+ev.title+'</span><span style="font-size:11px;color:var(--brick);font-weight:700;">✕ Nemohu</span></div>'; }).join("")
     +'</div>';
   }
 
